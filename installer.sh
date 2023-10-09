@@ -42,8 +42,8 @@ check_sha() {
     fi
 }
 
-BINARY=entry_point
-REPO=docker_entrypoint
+BINARY=entrypoint
+REPO=entrypoint
 FORMAT=tar.gz
 BINDIR=/
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
