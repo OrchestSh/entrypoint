@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"entrypoint/utils"
+	"os"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 // startCmd represents the start command
@@ -17,8 +18,7 @@ If the env var AUTOSTART is set to false no process should be started, only supe
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Infof("Setting up Odoo")
 		if err := utils.Odoo(); err != nil {
-			log.Errorf("Error setting up Odoo: %s", err.Error())
-			os.Exit(1)
+			log.Fatalf("Error setting up Odoo: %s", err.Error())
 		}
 		err := utils.RunAndLogCmdAs("supervisord -c /etc/supervisor/supervisord.conf", "", nil)
 		if err != nil {

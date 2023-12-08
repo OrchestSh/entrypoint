@@ -28,7 +28,7 @@ func GetConfigFile() string {
 	if fileEnv != "" {
 		return fileEnv
 	}
-	return "/home/odoo/.openerp_serverrc"
+	return "/home/odoo/.odoorc"
 }
 
 // GetInstanceType will use by default INSTANCE_TYPE env var because is the one we have been using in DeployV
@@ -69,6 +69,21 @@ func OdoorcConverter(list []string) map[string]string {
 	for k, v := range env_list {
 		if strings.HasPrefix(strings.ToLower(k), "odoorc_") {
 			key := strings.TrimPrefix(strings.ToLower(k), "odoorc_")
+			res[key] = v
+		}
+	}
+	return res
+}
+
+// OdoorcConverter receives a slice of strings and filters them by the 'odoorc_' prefix because these are the variables that
+// will be replaced in the configuration file, returns them as a map of strings where the key is the key of the
+// configuration.
+func OrchestshConverter(list []string) map[string]string {
+	res := make(map[string]string)
+	env_list := SplitEnvVars(list)
+	for k, v := range env_list {
+		if strings.HasPrefix(strings.ToLower(k), "orchestsh_") {
+			key := strings.TrimPrefix(strings.ToLower(k), "orchestsh_")
 			res[key] = v
 		}
 	}
@@ -204,6 +219,8 @@ func Odoo() error {
 	UpdateFromVars(odooCfg, defaultVars, false)
 	odooVars := FilterStrings(fullEnv, OdoorcConverter)
 	UpdateFromVars(odooCfg, odooVars, true)
+	orchestshVars := FilterStrings(fullEnv, OrchestshConverter)
+	UpdateFromVars(odooCfg, orchestshVars, true)
 	SetupWorker(odooCfg, os.Getenv("CONTAINER_TYPE"))
 	instanceType, err := GetInstanceType()
 	if err != nil {
