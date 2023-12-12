@@ -221,6 +221,14 @@ func Odoo() error {
 	UpdateFromVars(odooCfg, odooVars, true)
 	orchestshVars := FilterStrings(fullEnv, OrchestshConverter)
 	UpdateFromVars(odooCfg, orchestshVars, true)
+
+	varsFromSecrets, err := readDockerSecrets()
+	if err != nil {
+		return err
+	}
+
+	UpdateFromVars(odooCfg, varsFromSecrets, true)
+
 	SetupWorker(odooCfg, os.Getenv("CONTAINER_TYPE"))
 	instanceType, err := GetInstanceType()
 	if err != nil {
