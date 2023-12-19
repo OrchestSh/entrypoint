@@ -17,10 +17,21 @@ var startCmd = &cobra.Command{
 If the env var AUTOSTART is set to false no process should be started, only supervisor itself (and the entrypoint of course)`,
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Infof("Setting up Odoo")
-		if err := utils.Odoo(); err != nil {
+		file, err := cmd.Flags().GetString("file")
+		if err != nil {
+			log.Fatalf("error retrieving file flag: %v", err)
+		}
+		useDockerSecrets, err := cmd.Flags().GetBool("docker-secrets")
+		if err != nil {
+			if err != nil {
+				log.Fatalf("error retrieving docker-secrets flag: %v", err)
+			}
+		}
+		if err := utils.Odoo(file, useDockerSecrets); err != nil {
 			log.Fatalf("Error setting up Odoo: %s", err.Error())
 		}
-		err := utils.RunAndLogCmdAs("supervisord -c /etc/supervisor/supervisord.conf", "", nil)
+
+		err = utils.RunAndLogCmdAs("supervisord -c /etc/supervisor/supervisord.conf", "", nil)
 		if err != nil {
 			log.Errorf("Error starting supervisor: %s", err.Error())
 			os.Exit(1)
@@ -30,5 +41,8 @@ If the env var AUTOSTART is set to false no process should be started, only supe
 }
 
 func init() {
+	startCmd.Flags().String("file", "", "describes a file to read key=value pairs to include in the configuration")
+	startCmd.Flags().Bool("docker-secrets", false, "indicates if secrets at /run/secrets should be included in the values to update configuration")
+
 	rootCmd.AddCommand(startCmd)
 }

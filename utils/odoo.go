@@ -201,7 +201,7 @@ func SetDefaults(config *ini.File) {
 
 // Odoo this func coordinates all the odoo configuration loading the config file, calling all the methods needed to
 // update the configuration
-func Odoo() error {
+func Odoo(useFile string, useDockerSecrets bool) error {
 	log.Info("Preparing the configuration")
 
 	if err := prepareFiles(); err != nil {
@@ -221,13 +221,20 @@ func Odoo() error {
 	UpdateFromVars(odooCfg, odooVars, true)
 	orchestshVars := FilterStrings(fullEnv, OrchestshConverter)
 	UpdateFromVars(odooCfg, orchestshVars, true)
-
-	varsFromSecrets, err := readDockerSecrets()
-	if err != nil {
-		return err
+	if useFile != "" {
+		varsFromFile, err := readFileSecrets(useFile)
+		if err != nil {
+			return fmt.Errorf("could not read values at %v: %w", useFile, err)
+		}
+		UpdateFromVars(odooCfg, varsFromFile, true)
 	}
-
-	UpdateFromVars(odooCfg, varsFromSecrets, true)
+	if useDockerSecrets {
+		varsFromSecrets, err := readDockerSecrets()
+		if err != nil {
+			return fmt.Errorf("could not read from docker secrets: %w", err)
+		}
+		UpdateFromVars(odooCfg, varsFromSecrets, true)
+	}
 
 	SetupWorker(odooCfg, os.Getenv("CONTAINER_TYPE"))
 	instanceType, err := GetInstanceType()

@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"entrypoint/utils"
-	log "github.com/sirupsen/logrus"
 	"os"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/spf13/cobra"
 )
@@ -21,7 +22,7 @@ The command must be between single quotes:
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Infof("Setting up Odoo")
-		if err := utils.Odoo(); err != nil {
+		if err := utils.Odoo("", false); err != nil {
 			log.Errorf("Error setting up Odoo: %s", err.Error())
 			os.Exit(1)
 		}

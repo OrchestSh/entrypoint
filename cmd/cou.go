@@ -3,9 +3,10 @@ package cmd
 import (
 	"entrypoint/pkg/cou"
 	"entrypoint/utils"
+	"os"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 // couCmd represents the cou command
@@ -15,7 +16,7 @@ var couCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Info("Setting up Odoo")
-		if err := utils.Odoo(); err != nil {
+		if err := utils.Odoo("", false); err != nil {
 			log.Errorf("Error setting up Odoo: %s\n", err.Error())
 			os.Exit(1)
 		}
