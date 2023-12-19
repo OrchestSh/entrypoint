@@ -1,8 +1,10 @@
 package utils
 
 import (
-	"github.com/stretchr/testify/assert"
+	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestReadLines(t *testing.T) {
@@ -14,9 +16,19 @@ func TestReadLines(t *testing.T) {
 
 func TestAppendFiles(t *testing.T) {
 	expected := []string{"0", "1", "2", "3", "4", "5", "6"}
-	err := appendFiles("testdata/odoo_cfg", "testdata/odoo.d")
+	tmpCopy, err := os.CreateTemp("", "odoo_cfg")
 	assert.NoError(t, err)
-	res, err := readLines("testdata/odoo_cfg")
+	defer os.Remove(tmpCopy.Name())
+
+	content, err := os.ReadFile("testdata/odoo_cfg")
+	assert.NoError(t, err)
+
+	_, err = tmpCopy.Write(content)
+	assert.NoError(t, err)
+
+	err = appendFiles(tmpCopy.Name(), "testdata/odoo.d")
+	assert.NoError(t, err)
+	res, err := readLines(tmpCopy.Name())
 	assert.NoError(t, err)
 	assert.Equal(t, expected, res)
 }

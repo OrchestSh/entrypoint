@@ -51,7 +51,7 @@ func appendFiles(odooConfig, filesPath string) error {
 	}
 	content := []byte(strings.Join(odooLines, "\n"))
 	log.Info("Saving Odoo config file content")
-	if err := os.WriteFile(odooConfig, content, 0644); err != nil {
+	if err := os.WriteFile(odooConfig, content, 0o600); err != nil {
 		return err
 	}
 	return nil

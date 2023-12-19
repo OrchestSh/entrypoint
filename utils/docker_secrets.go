@@ -20,7 +20,7 @@ func readDockerSecrets() (map[string]string, error) {
 			continue
 		}
 
-		filePath := filepath.Join(secretsPath, e.Name())
+		filePath := filepath.Clean(filepath.Join(secretsPath, e.Name()))
 
 		content, err := os.ReadFile(filePath)
 		if err != nil {

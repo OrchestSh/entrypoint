@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"entrypoint/utils"
 	"os"
+
+	"entrypoint/utils"
 
 	log "github.com/sirupsen/logrus"
 

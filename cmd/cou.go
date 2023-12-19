@@ -1,9 +1,10 @@
 package cmd
 
 import (
+	"os"
+
 	"entrypoint/pkg/cou"
 	"entrypoint/utils"
-	"os"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"

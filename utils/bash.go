@@ -16,7 +16,6 @@ import (
 // GetUserUIDs returns the user UID and default GID
 func GetUserUIDs(username string) (uint32, uint32, error) {
 	u, err := user.Lookup(username)
-
 	if err != nil {
 		return 0, 0, err
 	}
@@ -80,7 +79,6 @@ func RunAndLogCmdAs(cmd string, userName string, env []string) error {
 		return err
 	}
 	return nil
-
 }
 
 // Copy copies a single file from src to dst

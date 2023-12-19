@@ -79,7 +79,7 @@ func TestGetOdooUser(t *testing.T) {
 
 func TestGetConfigFile(t *testing.T) {
 	res := GetConfigFile()
-	assert.Equal(t, "/home/odoo/.openerp_serverrc", res)
+	assert.Equal(t, "/home/odoo/.odoorc", res)
 	err := os.Setenv("ODOO_CONFIG_FILE", "/etc/odoo.conf")
 	assert.NoError(t, err)
 	res = GetConfigFile()

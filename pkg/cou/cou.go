@@ -1,9 +1,10 @@
 package cou
 
 import (
+	"os"
+
 	"entrypoint/utils"
 	log "github.com/sirupsen/logrus"
-	"os"
 )
 
 // RunCou will execute click-odoo-update to update the database, if you want to save the logs pass stream=false else the
