@@ -7,7 +7,6 @@ import (
 )
 
 func readDockerSecrets() (map[string]string, error) {
-	secrets := make(map[string]string)
 	secretsPath := "/run/secrets"
 	entries, err := os.ReadDir(secretsPath)
 	if err != nil {
@@ -31,6 +30,9 @@ func readDockerSecrets() (map[string]string, error) {
 		lines := strings.Split(string(content), "\n")
 
 		for _, l := range lines {
+			if strings.TrimSpace(l) == "" {
+				continue
+			}
 			parts := strings.SplitN(l, "=", 2)
 			key := strings.TrimSpace(parts[0])
 			value := strings.TrimSpace(parts[1])
@@ -39,5 +41,5 @@ func readDockerSecrets() (map[string]string, error) {
 		}
 	}
 
-	return secrets, nil
+	return vars, nil
 }
