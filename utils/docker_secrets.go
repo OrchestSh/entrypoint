@@ -6,8 +6,7 @@ import (
 	"strings"
 )
 
-func readDockerSecrets() (map[string]string, error) {
-	secretsPath := "/run/secrets"
+func readDockerSecrets(secretsPath string) (map[string]string, error) {
 	entries, err := os.ReadDir(secretsPath)
 	if err != nil {
 		return nil, err

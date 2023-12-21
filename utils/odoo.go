@@ -221,20 +221,20 @@ func Odoo(useFile string, useDockerSecrets bool) error {
 	UpdateFromVars(odooCfg, odooVars, true)
 	orchestshVars := FilterStrings(fullEnv, OrchestshConverter)
 	UpdateFromVars(odooCfg, orchestshVars, true)
-	if useFile != "" {
-		varsFromFile, err := readFileSecrets(useFile)
-		if err != nil {
-			return fmt.Errorf("could not read values at %v: %w", useFile, err)
-		}
-		UpdateFromVars(odooCfg, varsFromFile, true)
-	}
-	if useDockerSecrets {
-		varsFromSecrets, err := readDockerSecrets()
-		if err != nil {
-			return fmt.Errorf("could not read from docker secrets: %w", err)
-		}
-		UpdateFromVars(odooCfg, varsFromSecrets, true)
-	}
+	// if useFile != "" {
+	// 	varsFromFile, err := readFileSecrets(useFile)
+	// 	if err != nil {
+	// 		return fmt.Errorf("could not read values at %v: %w", useFile, err)
+	// 	}
+	// 	UpdateFromVars(odooCfg, varsFromFile, true)
+	// }
+	// if useDockerSecrets {
+	// 	varsFromSecrets, err := readDockerSecrets()
+	// 	if err != nil {
+	// 		return fmt.Errorf("could not read from docker secrets: %w", err)
+	// 	}
+	// 	UpdateFromVars(odooCfg, varsFromSecrets, true)
+	// }
 
 	SetupWorker(odooCfg, os.Getenv("CONTAINER_TYPE"))
 	instanceType, err := GetInstanceType()
