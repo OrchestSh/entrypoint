@@ -9,11 +9,13 @@ type valueReader interface {
 	readValue(string) string
 }
 
-type envGetter struct{}
-type valueStore struct {
-	source string
-	dict   map[string]string
-}
+type (
+	envGetter  struct{}
+	valueStore struct {
+		source string
+		dict   map[string]string
+	}
+)
 
 func (eg *envGetter) readValue(key string) string {
 	return os.Getenv(key)
@@ -32,7 +34,7 @@ func (vs *valueStore) updateDict(f func(string) (map[string]string, error)) erro
 	return nil
 }
 
-func getValueReader() (valueReader, error) {
+func GetValueReader() (valueReader, error) {
 	useDockerSecrets := false
 	if os.Getenv("ORCHESTSH_USE_DOCKER_SECRETS") != "" {
 		newValue, err := strconv.ParseBool(os.Getenv("ORCHESTSH_USE_DOCKER_SECRETS"))

@@ -58,7 +58,6 @@ func appendFiles(odooConfig, filesPath string) error {
 }
 
 func readFilePairs(file string) (map[string]string, error) {
-
 	file = filepath.Clean(file)
 
 	content, err := os.ReadFile(file)

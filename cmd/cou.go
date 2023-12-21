@@ -17,12 +17,17 @@ var couCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Info("Setting up Odoo")
-		if err := utils.Odoo("", false); err != nil {
+		if err := utils.Odoo(); err != nil {
 			log.Errorf("Error setting up Odoo: %s\n", err.Error())
 			os.Exit(1)
 		}
 
-		filename := utils.GetConfigFile()
+		vr, err := utils.GetValueReader()
+		if err != nil {
+			log.Fatalf("could not get value reader: %v", err)
+		}
+
+		filename := utils.GetConfigFile(vr)
 		db_name, err := cmd.Flags().GetString("db_name")
 		if err != nil {
 			log.Errorf("Error getting database name: %s", err.Error())

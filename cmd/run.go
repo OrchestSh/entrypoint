@@ -23,7 +23,7 @@ The command must be between single quotes:
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Infof("Setting up Odoo")
-		if err := utils.Odoo("", false); err != nil {
+		if err := utils.Odoo(); err != nil {
 			log.Errorf("Error setting up Odoo: %s", err.Error())
 			os.Exit(1)
 		}

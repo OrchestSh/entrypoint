@@ -78,28 +78,37 @@ func TestGetOdooUser(t *testing.T) {
 }
 
 func TestGetConfigFile(t *testing.T) {
-	res := GetConfigFile()
+	vr, err := GetValueReader()
+	if err != nil {
+		t.Error(err)
+	}
+	res := GetConfigFile(vr)
 	assert.Equal(t, "/home/odoo/.odoorc", res)
-	err := os.Setenv("ODOO_CONFIG_FILE", "/etc/odoo.conf")
+	err = os.Setenv("ODOO_CONFIG_FILE", "/etc/odoo.conf")
 	assert.NoError(t, err)
-	res = GetConfigFile()
+	res = GetConfigFile(vr)
 	assert.Equal(t, "/etc/odoo.conf", res)
 	os.Unsetenv("ODOO_CONFIG_FILE")
 }
 
 func TestGetInstanceType(t *testing.T) {
-	_, err := GetInstanceType()
+	vr, err := GetValueReader()
+	if err != nil {
+		t.Error(err)
+	}
+
+	_, err = GetInstanceType(vr)
 	assert.Errorf(t, err, "cannot determine the instance type, env vars INSTANCE_TYPE and/or ODOO_STAGE 'must' be defined and match")
 
 	err = os.Setenv("INSTANCE_TYPE", "test")
 	assert.NoError(t, err)
-	res, err := GetInstanceType()
+	res, err := GetInstanceType(vr)
 	assert.NoError(t, err)
 	assert.Equal(t, "test", res)
 
 	err = os.Setenv("ODOO_STAGE", "dev")
 	assert.NoError(t, err)
-	_, err = GetInstanceType()
+	_, err = GetInstanceType(vr)
 	assert.Errorf(t, err, "cannot determine the instance type, env vars INSTANCE_TYPE and ODOO_STAGE 'must' match")
 }
 

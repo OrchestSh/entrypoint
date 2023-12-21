@@ -14,7 +14,6 @@ func TestGetValueReader(t *testing.T) {
 	tempFile, err := os.CreateTemp(tempDir, "tempfile")
 	if err != nil {
 		t.Error(err)
-
 	}
 	if _, err := tempFile.WriteString("user=root\npassword=12345"); err != nil {
 		t.Error(err)
@@ -26,15 +25,18 @@ func TestGetValueReader(t *testing.T) {
 		expectedType valueReader
 		envVars      map[string]string
 	}{
-		{name: "envGetter",
+		{
+			name:         "envGetter",
 			expectedType: &envGetter{},
 			envVars:      map[string]string{"user": "root", "password": "12345"},
 		},
-		{name: "file valueStore",
+		{
+			name:         "file valueStore",
 			expectedType: &valueStore{source: tempFile.Name()},
 			envVars:      map[string]string{"ORCHESTSH_USE_FILE": tempFile.Name()},
 		},
-		{name: "docker secrets valueStore",
+		{
+			name:         "docker secrets valueStore",
 			expectedType: &valueStore{source: tempDir},
 			envVars:      map[string]string{"ORCHESTSH_USE_DOCKER_SECRETS": "true", "ORCHESTSH_SECRETS_PATH": tempDir},
 		},
@@ -47,7 +49,7 @@ func TestGetValueReader(t *testing.T) {
 					t.Error(err)
 				}
 			}
-			vr, err := getValueReader()
+			vr, err := GetValueReader()
 			if err != nil {
 				t.Error(err)
 			}
@@ -60,8 +62,6 @@ func TestGetValueReader(t *testing.T) {
 			if vr.readValue("password") != "12345" {
 				t.Errorf("expected %q, but got %q", "12345", vr.readValue("password"))
 			}
-
 		})
 	}
-
 }

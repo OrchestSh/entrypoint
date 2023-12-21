@@ -23,8 +23,8 @@ func GetOdooUser() string {
 }
 
 // GetConfigFile will return the odoo config file path that will be used by default
-func GetConfigFile() string {
-	fileEnv := os.Getenv("ODOO_CONFIG_FILE")
+func GetConfigFile(vr valueReader) string {
+	fileEnv := vr.readValue("ODOO_CONFIG_FILE")
 	if fileEnv != "" {
 		return fileEnv
 	}
@@ -34,9 +34,9 @@ func GetConfigFile() string {
 // GetInstanceType will use by default INSTANCE_TYPE env var because is the one we have been using in DeployV
 // for over 5 years, but as Odoo added a similar one we use it too. It is important to notice that the values must match
 // for example "updates" and "staging" matchm because are the same stage, but different name
-func GetInstanceType() (string, error) {
-	it := os.Getenv("INSTANCE_TYPE")
-	ost := os.Getenv("ODOO_STAGE")
+func GetInstanceType(vr valueReader) (string, error) {
+	it := vr.readValue("INSTANCE_TYPE")
+	ost := vr.readValue("ODOO_STAGE")
 	switch {
 	case ost == "" && it == "":
 		return "", fmt.Errorf("cannot determine the instance type, env vars INSTANCE_TYPE and/or ODOO_STAGE 'must' be defined and match")
@@ -75,21 +75,6 @@ func OdoorcConverter(list []string) map[string]string {
 	return res
 }
 
-// OdoorcConverter receives a slice of strings and filters them by the 'odoorc_' prefix because these are the variables that
-// will be replaced in the configuration file, returns them as a map of strings where the key is the key of the
-// configuration.
-func OrchestshConverter(list []string) map[string]string {
-	res := make(map[string]string)
-	env_list := SplitEnvVars(list)
-	for k, v := range env_list {
-		if strings.HasPrefix(strings.ToLower(k), "orchestsh_") {
-			key := strings.TrimPrefix(strings.ToLower(k), "orchestsh_")
-			res[key] = v
-		}
-	}
-	return res
-}
-
 // SplitEnvVars receives a slice of strings and creates a mapping of strings based on the values in the slice separated
 // by `=`. This is used to split the environment variables into a mapping of key: value.
 func SplitEnvVars(list []string) map[string]string {
@@ -110,8 +95,8 @@ func FilterStrings(list []string, converter envConverter) map[string]string {
 }
 
 // UpdateOdooConfig saves the ini object and updates the addons paths
-func UpdateOdooConfig(config *ini.File) error {
-	cfgFile := GetConfigFile()
+func UpdateOdooConfig(config *ini.File, vr valueReader) error {
+	cfgFile := GetConfigFile(vr)
 	if err := config.SaveTo(cfgFile); err != nil {
 		return err
 	}
@@ -201,15 +186,18 @@ func SetDefaults(config *ini.File) {
 
 // Odoo this func coordinates all the odoo configuration loading the config file, calling all the methods needed to
 // update the configuration
-func Odoo(useFile string, useDockerSecrets bool) error {
+func Odoo() error {
 	log.Info("Preparing the configuration")
-
-	if err := prepareFiles(); err != nil {
+	vr, err := GetValueReader()
+	if err != nil {
+		return err
+	}
+	if err := prepareFiles(vr); err != nil {
 		return err
 	}
 
 	log.Info("Setting up the config file")
-	odooCfg, err := ini.Load(GetConfigFile())
+	odooCfg, err := ini.Load(GetConfigFile(vr))
 	if err != nil {
 		log.Errorf("Error loading Odoo config: %s", err.Error())
 		return err
@@ -219,25 +207,9 @@ func Odoo(useFile string, useDockerSecrets bool) error {
 	UpdateFromVars(odooCfg, defaultVars, false)
 	odooVars := FilterStrings(fullEnv, OdoorcConverter)
 	UpdateFromVars(odooCfg, odooVars, true)
-	orchestshVars := FilterStrings(fullEnv, OrchestshConverter)
-	UpdateFromVars(odooCfg, orchestshVars, true)
-	// if useFile != "" {
-	// 	varsFromFile, err := readFileSecrets(useFile)
-	// 	if err != nil {
-	// 		return fmt.Errorf("could not read values at %v: %w", useFile, err)
-	// 	}
-	// 	UpdateFromVars(odooCfg, varsFromFile, true)
-	// }
-	// if useDockerSecrets {
-	// 	varsFromSecrets, err := readDockerSecrets()
-	// 	if err != nil {
-	// 		return fmt.Errorf("could not read from docker secrets: %w", err)
-	// 	}
-	// 	UpdateFromVars(odooCfg, varsFromSecrets, true)
-	// }
 
-	SetupWorker(odooCfg, os.Getenv("CONTAINER_TYPE"))
-	instanceType, err := GetInstanceType()
+	SetupWorker(odooCfg, vr.readValue("CONTAINER_TYPE"))
+	instanceType, err := GetInstanceType(vr)
 	if err != nil {
 		return err
 	}
@@ -245,8 +217,8 @@ func Odoo(useFile string, useDockerSecrets bool) error {
 	UpdateSentry(odooCfg, instanceType)
 	SetDefaults(odooCfg)
 	autostart := true
-	if os.Getenv("AUTOSTART") != "" {
-		autostart, err = strconv.ParseBool(os.Getenv("AUTOSTART"))
+	if vr.readValue("AUTOSTART") != "" {
+		autostart, err = strconv.ParseBool(vr.readValue("AUTOSTART"))
 		if err != nil {
 			autostart = true
 		}
@@ -256,19 +228,19 @@ func Odoo(useFile string, useDockerSecrets bool) error {
 		return err
 	}
 	log.Info("Saving new Odoo configuration")
-	if err := UpdateOdooConfig(odooCfg); err != nil {
+	if err := UpdateOdooConfig(odooCfg, vr); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func prepareFiles() error {
-	if err := appendFiles(GetConfigFile(), "/external_files/odoocfg"); err != nil {
+func prepareFiles(vr valueReader) error {
+	if err := appendFiles(GetConfigFile(vr), "/external_files/odoocfg"); err != nil {
 		return err
 	}
 
-	fsPath := os.Getenv("CONFIGFILE_PATH")
+	fsPath := vr.readValue("CONFIGFILE_PATH")
 	if fsPath == "" {
 		fsPath = "/home/odoo/.local/share/Odoo/filestore"
 	}
