@@ -57,6 +57,7 @@ func appendFiles(odooConfig, filesPath string) error {
 	return nil
 }
 
+// readFilePairs will return a map filled with the key-value pairs found in file
 func readFilePairs(file string) (map[string]string, error) {
 	file = filepath.Clean(file)
 

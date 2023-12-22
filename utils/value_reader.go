@@ -5,6 +5,7 @@ import (
 	"strconv"
 )
 
+// valueReader defines an interface with two methods. readValue method will return the corresponding value for the given argument. getDict will return the full map from which the valueReader reads values
 type valueReader interface {
 	readValue(string) string
 	getDict() map[string]string
@@ -21,6 +22,7 @@ type (
 func (eg *envGetter) readValue(key string) string {
 	return os.Getenv(key)
 }
+
 func (eg *envGetter) getDict() map[string]string {
 	fullEnv := os.Environ()
 	return DefaultConverter(fullEnv)
@@ -43,6 +45,11 @@ func (vs *valueStore) updateDict(f func(string) (map[string]string, error)) erro
 	return nil
 }
 
+// GetValueReader returns a valueReader from which key-value pairs can be read.
+// If ORCHESTSH_USE_DOCKER_SECRETS environment variable is true and ORCHESTSH_SECRETS_PATH is a valid path,
+// the returned valueReader will read from values found at the files in ORCHESTSH_SECRETS_PATH.
+// If ORCHESTSH_USE_FILE environment variable is a valid file, the returned valueReader will read from values found in the file
+// The default valueReader returned reads values from environment variables
 func GetValueReader() (valueReader, error) {
 	useDockerSecrets := false
 	if os.Getenv("ORCHESTSH_USE_DOCKER_SECRETS") != "" {

@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// readDockerSecrets will look for files in the specified secretsPath and return a map filled with the key-value pairs found in the files
 func readDockerSecrets(secretsPath string) (map[string]string, error) {
 	entries, err := os.ReadDir(secretsPath)
 	if err != nil {

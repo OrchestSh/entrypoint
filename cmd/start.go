@@ -18,11 +18,9 @@ var startCmd = &cobra.Command{
 If the env var AUTOSTART is set to false no process should be started, only supervisor itself (and the entrypoint of course)`,
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Infof("Setting up Odoo")
-
 		if err := utils.Odoo(); err != nil {
 			log.Fatalf("Error setting up Odoo: %s", err.Error())
 		}
-
 		err := utils.RunAndLogCmdAs("supervisord -c /etc/supervisor/supervisord.conf", "", nil)
 		if err != nil {
 			log.Errorf("Error starting supervisor: %s", err.Error())
