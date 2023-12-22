@@ -7,6 +7,7 @@ import (
 
 type valueReader interface {
 	readValue(string) string
+	getDict() map[string]string
 }
 
 type (
@@ -20,9 +21,17 @@ type (
 func (eg *envGetter) readValue(key string) string {
 	return os.Getenv(key)
 }
+func (eg *envGetter) getDict() map[string]string {
+	fullEnv := os.Environ()
+	return DefaultConverter(fullEnv)
+}
 
-func (fg *valueStore) readValue(key string) string {
-	return fg.dict[key]
+func (vs *valueStore) readValue(key string) string {
+	return vs.dict[key]
+}
+
+func (vs *valueStore) getDict() map[string]string {
+	return vs.dict
 }
 
 func (vs *valueStore) updateDict(f func(string) (map[string]string, error)) error {

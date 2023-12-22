@@ -64,9 +64,13 @@ func DefaultConverter(list []string) map[string]string {
 // will be replaced in the configuration file, returns them as a map of strings where the key is the key of the
 // configuration.
 func OdoorcConverter(list []string) map[string]string {
-	res := make(map[string]string)
 	env_list := SplitEnvVars(list)
-	for k, v := range env_list {
+	return OdoorcMapConverter(env_list)
+}
+
+func OdoorcMapConverter(m map[string]string) map[string]string {
+	res := make(map[string]string)
+	for k, v := range m {
 		if strings.HasPrefix(strings.ToLower(k), "odoorc_") {
 			key := strings.TrimPrefix(strings.ToLower(k), "odoorc_")
 			res[key] = v
@@ -202,10 +206,9 @@ func Odoo() error {
 		log.Errorf("Error loading Odoo config: %s", err.Error())
 		return err
 	}
-	fullEnv := os.Environ()
-	defaultVars := FilterStrings(fullEnv, DefaultConverter)
-	UpdateFromVars(odooCfg, defaultVars, false)
-	odooVars := FilterStrings(fullEnv, OdoorcConverter)
+	store := vr.getDict()
+	UpdateFromVars(odooCfg, store, false)
+	odooVars := OdoorcMapConverter(store)
 	UpdateFromVars(odooCfg, odooVars, true)
 
 	SetupWorker(odooCfg, vr.readValue("CONTAINER_TYPE"))
