@@ -46,7 +46,7 @@ func UpdateAutostart(autostart bool, confPath string) error {
 	return nil
 }
 
-// setAutostart will enable the autostart in a particular file, but won't touch the default section neither supervisor one
+// setAutostart will enable autostart in a particular file, but won't touch the default section neither supervisor one
 // only in the services section
 func setAutostart(content []byte, w io.Writer) error {
 	cfg, err := ini.Load(content)

@@ -150,7 +150,7 @@ func SetupWorker(config *ini.File, containerType string) {
 	}
 }
 
-// UpdateFromVars will update the odoo configuration from env vars wich should start with ODOORC_ prefix, if the exists
+// UpdateFromVars will update the odoo configuration from env vars which should start with ODOORC_ prefix, if the exists
 // the value  will be updated else the parameter will be added to the 'options' section only when appendNew == true,
 // which is the default for Odoo.
 // If you wish to add it to another section add the desired section to '/external_files/openerp_serverrc' or add
@@ -167,7 +167,7 @@ func UpdateFromVars(config *ini.File, odooVars map[string]string, appendNew bool
 				break
 			}
 		}
-		// The key does not exist and we want to force append, so we add it into the options section
+		// The key does not exist, and we want to force append, so we add it into the options section
 		if !updated && appendNew {
 			config.Section("options").Key(k).SetValue(v)
 		}
@@ -175,7 +175,7 @@ func UpdateFromVars(config *ini.File, odooVars map[string]string, appendNew bool
 }
 
 // SetDefaults takes care of important defaults:
-// - Won't allow admin as default super user password, a random string is generated
+// - Won't allow admin as default superuser password, a random string is generated
 // - Won't allow to change the default ports because inside the container is not needed and will mess with the external
 // - Disable logrotate since supervisor will handle that
 func SetDefaults(config *ini.File) {
