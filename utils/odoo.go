@@ -219,17 +219,36 @@ func Odoo() error {
 	log.Debugf("Instance type: %s", instanceType)
 	UpdateSentry(odooCfg, instanceType)
 	SetDefaults(odooCfg)
-	autostart := true
 	if vr.readValue("AUTOSTART") != "" {
-		autostart, err = strconv.ParseBool(vr.readValue("AUTOSTART"))
+		autostart, err := strconv.ParseBool(vr.readValue("AUTOSTART"))
 		if err != nil {
-			autostart = true
+			log.Errorf("Error parsing AUTOSTART with value '%s': %s", vr.readValue("AUTOSTART"), err.Error())
+			return err
 		}
 		log.Debugf("Autostart: %v", autostart)
+
+		if autostart {
+			if err := UpdateSupervisor("/etc/supervisor/conf.d", SetAutostart); err != nil {
+				return err
+			}
+		}
 	}
-	if err := UpdateAutostart(autostart, "/etc/supervisor/conf.d"); err != nil {
-		return err
+
+	log.Debugf("Orchestsh stdout: %v", vr.readValue("ORCHESTSH_STDOUT"))
+	if vr.readValue("ORCHESTSH_STDOUT") != "" {
+		stdout, err := strconv.ParseBool(vr.readValue("ORCHESTSH_STDOUT"))
+		if err != nil {
+			log.Errorf("Error parsing ORCHESTSH_STDOUT with value '%s': %s", vr.readValue("ORCHESTSH_STDOUT"), err.Error())
+			return err
+		}
+		if stdout {
+			if err := UpdateSupervisor("/etc/supervisor/conf.d", SetStout); err != nil {
+				return err
+			}
+		}
+		log.Debugf("Orchestsh stdout: %v", stdout)
 	}
+
 	log.Info("Saving new Odoo configuration")
 	if err := UpdateOdooConfig(odooCfg, vr); err != nil {
 		return err
