@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -8,6 +9,7 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/mod/semver"
 	"gopkg.in/ini.v1"
 )
 
@@ -127,7 +129,7 @@ func UpdateSentry(config *ini.File, instanceType string) {
 // SetupWorker will update the configuration to match the desired type of container, for example:
 // if you wish to run a cron only container set the containerType parameter to cron and this func will disable the
 // longpolling and the xmlrpc service
-func SetupWorker(config *ini.File, containerType string) {
+func SetupWorker(config *ini.File, containerType, version string) {
 	switch strings.ToLower(containerType) {
 	case "worker":
 		config.Section("options").Key("odoorc_http_enable").SetValue("True")
@@ -138,11 +140,14 @@ func SetupWorker(config *ini.File, containerType string) {
 	case "cron":
 		config.Section("options").Key("odoorc_http_enable").SetValue("False")
 		config.Section("options").Key("max_cron_threads").SetValue("1")
-		config.Section("options").Key("workers").SetValue("0")
+		config.Section("options").Key("workers").SetValue("-1")
 		config.Section("options").Key("xmlrpcs").SetValue("False")
 		config.Section("options").Key("xmlrpc").SetValue("False")
+		if semver.Compare("v"+version, "v16.0") == -1 {
+			config.Section("options").Key("workers").SetValue("0")
+		}
 
-	case "longpoll":
+	case "chat":
 		config.Section("options").Key("odoorc_http_enable").SetValue("False")
 		config.Section("options").Key("max_cron_threads").SetValue("0")
 		config.Section("options").Key("workers").SetValue("2")
@@ -178,9 +183,18 @@ func UpdateFromVars(config *ini.File, odooVars map[string]string, appendNew bool
 // - Won't allow admin as default superuser password, a random string is generated
 // - Won't allow to change the default ports because inside the container is not needed and will mess with the external
 // - Disable logrotate since supervisor will handle that
-func SetDefaults(config *ini.File) {
-	config.Section("options").Key("xmlrpc_port").SetValue("8069")
-	config.Section("options").Key("longpolling_port").SetValue("8072")
+func SetDefaults(config *ini.File, version string) {
+	config.Section("options").DeleteKey("longpolling_port")
+	config.Section("options").DeleteKey("xmlrpc_port")
+
+	config.Section("options").Key("gevent_port").SetValue("8072")
+	config.Section("options").Key("http_port").SetValue("8069")
+
+	if semver.Compare("v"+version, "v16.0") == -1 {
+		config.Section("options").Key("longpolling_port").SetValue("8072")
+		config.Section("options").Key("xmlrpc_port").SetValue("8069")
+	}
+
 	config.Section("options").Key("logrorate").SetValue("False")
 	if config.Section("options").Key("admin_passwd").Value() == "admin" ||
 		config.Section("options").Key("admin_passwd").Value() == "" {
@@ -207,18 +221,23 @@ func Odoo() error {
 		return err
 	}
 	store := vr.getDict()
+	odooVersion, ok := store["VERSION"]
+	if !ok {
+		return errors.New("failed to get the Odoo version, please set the env var VERSION with the proper value")
+	}
+
 	UpdateFromVars(odooCfg, store, false)
 	odooVars := OdoorcMapConverter(store)
 	UpdateFromVars(odooCfg, odooVars, true)
 
-	SetupWorker(odooCfg, vr.readValue("CONTAINER_TYPE"))
+	SetupWorker(odooCfg, vr.readValue("ORCHESTSH_CONTAINER_TYPE"), odooVersion)
 	instanceType, err := GetInstanceType(vr)
 	if err != nil {
 		return err
 	}
 	log.Debugf("Instance type: %s", instanceType)
 	UpdateSentry(odooCfg, instanceType)
-	SetDefaults(odooCfg)
+	SetDefaults(odooCfg, odooVersion)
 	if vr.readValue("AUTOSTART") != "" {
 		autostart, err := strconv.ParseBool(vr.readValue("AUTOSTART"))
 		if err != nil {
