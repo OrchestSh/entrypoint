@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"math"
 	"os"
 	"os/exec"
 	"os/user"
@@ -24,11 +25,18 @@ func GetUserUIDs(username string) (uint32, uint32, error) {
 	if err != nil {
 		return 0, 0, err
 	}
+	if uid < 0 || uid > math.MaxUint32 {
+		uid = 0
+	}
 
 	gid, err := strconv.Atoi(u.Gid)
 	if err != nil {
 		return 0, 0, err
 	}
+	if gid < 0 || uid > math.MaxUint32 {
+		gid = 0
+	}
+
 	return uint32(uid), uint32(gid), nil
 }
 
