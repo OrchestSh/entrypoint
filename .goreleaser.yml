@@ -1,3 +1,4 @@
+version: 2
 project_name: entrypoint
 release:
   github:
@@ -28,7 +29,6 @@ snapshot:
   name_template: "{{ .ProjectName }}-next"
 changelog:
   sort: asc
-  skip: true
   filters:
     exclude:
       - '^docs:'
