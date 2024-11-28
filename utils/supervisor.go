@@ -75,6 +75,7 @@ func SetStout(content []byte, w io.Writer) error {
 		section.Key("stdout_logfile").SetValue("/dev/fd/1")
 		section.Key("stderr_logfile").SetValue("/dev/fd/1")
 		section.Key("stdout_logfile_maxbytes").SetValue("0")
+		section.Key("stderr_logfile_maxbytes").SetValue("0")
 	}
 	if _, err := cfg.WriteTo(w); err != nil {
 		return err
