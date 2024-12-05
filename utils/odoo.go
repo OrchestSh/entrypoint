@@ -158,8 +158,7 @@ func SetupWorker(config *ini.File, containerType, version string) {
 // UpdateFromVars will update the odoo configuration from env vars which should start with ODOORC_ prefix, if the exists
 // the value  will be updated else the parameter will be added to the 'options' section only when appendNew == true,
 // which is the default for Odoo.
-// If you wish to add it to another section add the desired section to '/external_files/openerp_serverrc' or add
-// the file with only that section to '/external_files/odoocfg'
+// If you wish to add it to another section, add a file with only that section to the folder '/external_files/odoocfg'
 func UpdateFromVars(config *ini.File, odooVars map[string]string, appendNew bool) {
 	sections := config.Sections()
 	for k, v := range odooVars {

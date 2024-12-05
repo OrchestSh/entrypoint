@@ -19,7 +19,7 @@ as the given user.
 
 The command must be between single quotes:
 
-# /entrypoint run --user odoo '/home/odoo/instance/odoo/odoo-bin -c /home/odoo/.openerp_serverrc -u all --stop-after-init'
+# /entrypoint run --user odoo '/home/odoo/instance/odoo/odoo-bin -c /home/odoo/.odoorc -u all --stop-after-init'
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Infof("Setting up Odoo")
