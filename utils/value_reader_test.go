@@ -22,7 +22,7 @@ func TestGetValueReader(t *testing.T) {
 	}
 	defer func() {
 		if err := os.RemoveAll(tempDir); err != nil {
-			log.Error("Failed to clean up tempDir: %v", err)
+			log.Errorf("Failed to clean up tempDir: %v", err)
 		}
 	}()
 
