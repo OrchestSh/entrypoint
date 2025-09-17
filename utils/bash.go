@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
-	"path/filepath"
 	"strconv"
 	"syscall"
 
@@ -87,20 +86,4 @@ func RunAndLogCmdAs(cmd string, userName string, env []string) error {
 		return err
 	}
 	return nil
-}
-
-// Copy copies a single file from src to dst
-func Copy(src, dst string) error {
-	srcF, err := os.Open(filepath.Clean(src))
-	if err != nil {
-		return err
-	}
-	defer srcF.Close()
-	dstF, err := os.Create(filepath.Clean(dst))
-	if err != nil {
-		return err
-	}
-	defer dstF.Close()
-	_, err = dstF.ReadFrom(srcF)
-	return err
 }

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	log "github.com/sirupsen/logrus"
 	"os"
 	"testing"
 
@@ -18,7 +19,11 @@ func TestAppendFiles(t *testing.T) {
 	expected := []string{"0", "1", "2", "3", "4", "5", "6"}
 	tmpCopy, err := os.CreateTemp("", "odoo_cfg")
 	assert.NoError(t, err)
-	defer os.Remove(tmpCopy.Name())
+	defer func() {
+		if err := os.Remove(tmpCopy.Name()); err != nil {
+			log.Errorf("Failed to remove temporary file: %v", err)
+		}
+	}()
 
 	content, err := os.ReadFile("testdata/odoo_cfg")
 	assert.NoError(t, err)
@@ -39,7 +44,11 @@ func TestReadFilePairs(t *testing.T) {
 		t.Error(err)
 	}
 
-	defer os.Remove(f.Name())
+	defer func() {
+		if err := os.Remove(f.Name()); err != nil {
+			log.Errorf("Failed to remove temporary file: %v", err)
+		}
+	}()
 
 	contentString := "user=root\npassword=12345"
 

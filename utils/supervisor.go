@@ -24,20 +24,31 @@ func UpdateSupervisor(confPath string, setter func(content []byte, w io.Writer) 
 			continue
 		}
 		log.Infof("Checking file: %s", f.Name())
-		cfgFile := filepath.Clean(path.Join(confPath, f.Name()))
-		content, err := os.ReadFile(cfgFile)
-		if err != nil {
-			return err
+		cfgFile := path.Join(confPath, f.Name())
+		if err2 := setConfig(cfgFile, setter); err2 != nil {
+			return err2
 		}
-		w, err := os.Create(cfgFile)
-		if err != nil {
-			return err
+	}
+	return nil
+}
+
+func setConfig(cfgFile string, setter func(content []byte, w io.Writer) error) error {
+	content, err := os.ReadFile(filepath.Clean(cfgFile))
+	if err != nil {
+		return err
+	}
+	w, err := os.Create(filepath.Clean(cfgFile))
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := w.Close(); err != nil {
+			log.Errorf("Failed to close file descriptor: %v", err)
 		}
-		defer w.Close()
-		err = setter(content, w)
-		if err != nil {
-			return err
-		}
+	}()
+	err = setter(content, w)
+	if err != nil {
+		return err
 	}
 	return nil
 }
