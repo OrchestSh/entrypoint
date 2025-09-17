@@ -26,7 +26,7 @@ builds:
 checksum:
   name_template: 'checksums.txt'
 snapshot:
-  name_template: "{{ .ProjectName }}-next"
+  version_template: "{{ .ProjectName }}-next"
 changelog:
   sort: asc
   filters:
