@@ -88,7 +88,8 @@ func TestGetConfigFile(t *testing.T) {
 	assert.NoError(t, err)
 	res = GetConfigFile(vr)
 	assert.Equal(t, "/etc/odoo.conf", res)
-	os.Unsetenv("ODOO_CONFIG_FILE")
+	err = os.Unsetenv("ODOO_CONFIG_FILE")
+	assert.NoError(t, err)
 }
 
 func TestGetInstanceType(t *testing.T) {

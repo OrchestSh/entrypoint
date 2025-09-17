@@ -4,6 +4,8 @@ import (
 	"os"
 	"reflect"
 	"testing"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func TestGetValueReader(t *testing.T) {
@@ -18,7 +20,11 @@ func TestGetValueReader(t *testing.T) {
 	if _, err := tempFile.WriteString("user=root\npassword=12345"); err != nil {
 		t.Error(err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			log.Error("Failed to clean up tempDir: %v", err)
+		}
+	}()
 
 	tests := []struct {
 		name         string
