@@ -194,7 +194,12 @@ func SetDefaults(config *ini.File, version string) {
 		config.Section("options").Key("xmlrpc_port").SetValue("8069")
 	}
 
-	config.Section("options").Key("logrorate").SetValue("False")
+	if semver.Compare("v"+version, "v13.0") == -1 {
+		config.Section("options").Key("logrotate").SetValue("False")
+	} else {
+		config.Section("options").DeleteKey("logrotate")
+	}
+
 	if config.Section("options").Key("admin_passwd").Value() == "admin" ||
 		config.Section("options").Key("admin_passwd").Value() == "" {
 		config.Section("options").Key("admin_passwd").SetValue(RandStringRunes(64))
