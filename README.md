@@ -29,8 +29,8 @@ The entry_point can be tuned using any of the following env vars:
 
 ```DEBUG_ENTRYPOINT```: Will log debug output and be more verbose
 
-```AUTOSTART```: If False will set all the processed from supervisor to autostart false, if true basically won't change
-anything because is assumed that all processes are autostart true by default
+```AUTOSTART```: If False will set all the processed from supervisor to autostart false, if true will **only**
+set the `odoo` process to true, will leave the others as they are set. In case the var is not set, nothing will change.
 
 ```ORCHESTSH_STDOUT```: Will force all the instance logs to the standard output, this is usefully when deploying the
 container in kubernetes or docker swarm, all the logs can be read by any collector that can read the container logs.

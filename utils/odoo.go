@@ -250,10 +250,14 @@ func Odoo() error {
 		}
 		log.Debugf("Autostart: %v", autostart)
 
-		if autostart {
+		if !autostart {
 			if err := UpdateSupervisor("/etc/supervisor/conf.d", SetAutostart); err != nil {
 				return err
 			}
+		}
+
+		if err := UpdateSupervisor("/etc/supervisor/conf.d", AutoStartOdoo(autostart)); err != nil {
+			return err
 		}
 	}
 

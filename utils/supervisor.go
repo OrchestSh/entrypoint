@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -70,6 +71,28 @@ func SetAutostart(content []byte, w io.Writer) error {
 		return err
 	}
 	return nil
+}
+
+// AutoStartOdoo will enable autostart for Odoo only. This is an important distinction
+// from SetAutostart that will do in all sections and files. Returns a function that can be passed to
+// UpdateSupervisor.
+func AutoStartOdoo(value bool) func([]byte, io.Writer) error {
+	return func(content []byte, w io.Writer) error {
+		cfg, err := ini.Load(content)
+		if err != nil {
+			return err
+		}
+		sections := cfg.Sections()
+		for _, section := range sections {
+			if section.Name() == "odoo" {
+				section.Key("autostart").SetValue(strconv.FormatBool(value))
+			}
+		}
+		if _, err := cfg.WriteTo(w); err != nil {
+			return err
+		}
+		return nil
+	}
 }
 
 // SetStout will enable stdout_logfile and stderr_logfile in a particular configuration file so all the output will be
