@@ -15,6 +15,24 @@ import (
 
 type envConverter func([]string) map[string]string
 
+// NormalizeVersionForSemver normalizes Odoo version strings (e.g., saas-19.2, master)
+// so they can be safely parsed by golang.org/x/mod/semver.
+func NormalizeVersionForSemver(version string) string {
+	v := strings.TrimSpace(version)
+	if v == "master" {
+		return "v999.0"
+	}
+	v = strings.ReplaceAll(v, "saas-", "")
+	if !strings.HasPrefix(v, "v") {
+		v = "v" + v
+	}
+	// Add .0 if it's just a major version
+	if strings.Count(v, ".") == 0 {
+		v = v + ".0"
+	}
+	return v
+}
+
 // GetOdooUser is for future use, so far we do not plan to use other user that odoo to execute the instance
 func GetOdooUser() string {
 	user := os.Getenv("ODOO_USER")
@@ -143,7 +161,8 @@ func SetupWorker(config *ini.File, containerType, version string) {
 		config.Section("options").Key("workers").SetValue("-1")
 		config.Section("options").Key("xmlrpcs").SetValue("False")
 		config.Section("options").Key("xmlrpc").SetValue("False")
-		if semver.Compare("v"+version, "v16.0") == -1 {
+		normalizedVersion := NormalizeVersionForSemver(version)
+		if semver.Compare(normalizedVersion, "v16.0") == -1 {
 			config.Section("options").Key("workers").SetValue("0")
 		}
 
@@ -189,12 +208,14 @@ func SetDefaults(config *ini.File, version string) {
 	config.Section("options").Key("gevent_port").SetValue("8072")
 	config.Section("options").Key("http_port").SetValue("8069")
 
-	if semver.Compare("v"+version, "v16.0") == -1 {
+	normalizedVersion := NormalizeVersionForSemver(version)
+
+	if semver.Compare(normalizedVersion, "v16.0") == -1 {
 		config.Section("options").Key("longpolling_port").SetValue("8072")
 		config.Section("options").Key("xmlrpc_port").SetValue("8069")
 	}
 
-	if semver.Compare("v"+version, "v13.0") == -1 {
+	if semver.Compare(normalizedVersion, "v13.0") == -1 {
 		config.Section("options").Key("logrotate").SetValue("False")
 	} else {
 		config.Section("options").DeleteKey("logrotate")
