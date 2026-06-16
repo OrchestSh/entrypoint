@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	Number    = "0.0.0-alpha.6"
+	Number    = "0.0.0-alpha.7"
 	Build     = "LocalBuild"
 	BuildDate = ""
 )
