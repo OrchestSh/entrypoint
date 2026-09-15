@@ -131,6 +131,37 @@ func TestMoveSentryKeysToOwnSection(t *testing.T) {
 	assert.False(t, sentry.HasKey("db_host"), "Only the sentry_ prefix moves.")
 }
 
+func TestSentryValue(t *testing.T) {
+	config := ini.Empty()
+	config.Section("options").Key("sentry_enabled").SetValue("True")
+	assert.Equal(t, "True", SentryValue(config, "sentry_enabled"),
+		"A key that is still in [options] must be found there.")
+
+	MoveSentryKeysToOwnSection(config)
+	assert.Equal(t, "True", SentryValue(config, "sentry_enabled"),
+		"A key already moved to [sentry] must be found there, which is the state of every start "+
+			"after the first one.")
+	assert.Equal(t, "", SentryValue(config, "sentry_dsn"),
+		"A key that lives in neither section reads empty.")
+}
+
+func TestUpdateSentryAfterTheKeysMoved(t *testing.T) {
+	// What a restart looks like: the entry point reloads its own output, so sentry_enabled is in
+	// [sentry] and a variable added since then landed in [options] as a new key.
+	config := ini.Empty()
+	config.Section("sentry").Key("sentry_enabled").SetValue("True")
+	config.Section("options").Key("sentry_dsn").SetValue("https://key@sentry.example.com/1")
+
+	UpdateSentry(config, "production")
+
+	assert.Equal(t, GetMainRepoPath(), SentryValue(config, "sentry_odoo_dir"),
+		"The block must run even though sentry_enabled is no longer in [options].")
+	assert.Equal(t, GetSentryEnvironment("production"), SentryValue(config, "sentry_environment"),
+		"The environment must be recomputed on every start, it carries the branch.")
+	assert.Equal(t, "https://key@sentry.example.com/1", SentryValue(config, "sentry_dsn"),
+		"A variable that arrived after the first start must still be reachable.")
+}
+
 func TestSplitEnvVars(t *testing.T) {
 	values := []struct {
 		input    []string

@@ -230,14 +230,27 @@ func SentryReadsOwnSection(odooConfigPath string) bool {
 	return strings.Contains(string(content), sentrySectionMarker)
 }
 
+// SentryValue returns the value of a sentry_ key wherever it currently lives, empty when it lives
+// nowhere. [sentry] is looked at first because that is where a previous start left it: this entry
+// point reloads its own output rather than a pristine template, so from the second start onwards
+// the keys are no longer in [options] and reading only there would skip the whole configuration.
+func SentryValue(config *ini.File, name string) string {
+	for _, sectionName := range []string{"sentry", "options"} {
+		section, err := config.GetSection(sectionName)
+		if err != nil {
+			continue
+		}
+		if section.HasKey(name) {
+			return section.Key(name).Value()
+		}
+	}
+	return ""
+}
+
 // UpdateSentry check if sentry is enabled in such case adds/updates the values in the ini condiguration file
 // setting the environment and the main repository path
 func UpdateSentry(config *ini.File, instanceType string) {
-	if !config.Section("options").HasKey("sentry_enabled") {
-		return
-	}
-	sentryStr := config.Section("options").Key("sentry_enabled").Value()
-	isEnabled, err := strconv.ParseBool(sentryStr)
+	isEnabled, err := strconv.ParseBool(SentryValue(config, "sentry_enabled"))
 	if err != nil {
 		return
 	}
@@ -245,7 +258,7 @@ func UpdateSentry(config *ini.File, instanceType string) {
 		config.Section("options").Key("sentry_odoo_dir").SetValue(GetMainRepoPath())
 		config.Section("options").Key("sentry_environment").SetValue(GetSentryEnvironment(instanceType))
 		// A tag given through ODOORC_SENTRY_DIST wins, this is only the default.
-		if config.Section("options").Key("sentry_dist").Value() == "" {
+		if SentryValue(config, "sentry_dist") == "" {
 			if imageTag := GetImageTag(GetMainRepoPath()); imageTag != "" {
 				config.Section("options").Key("sentry_dist").SetValue(imageTag)
 			}
@@ -271,7 +284,7 @@ func MoveSentryKeysToOwnSection(config *ini.File) {
 	sentry := config.Section("sentry")
 	sentry.Comment = sentrySectionComment
 	for _, key := range options.Keys() {
-		if strings.HasPrefix(key.Name(), "sentry_") {
+		if strings.HasPrefix(strings.ToLower(key.Name()), "sentry_") {
 			sentry.Key(key.Name()).SetValue(key.Value())
 			options.DeleteKey(key.Name())
 		}
