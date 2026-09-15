@@ -199,6 +199,37 @@ func GetSentryEnvironment(instanceType string) string {
 	return instanceType + "-" + branch
 }
 
+// odooConfigSource is the config loader of the Odoo that the image runs.
+const odooConfigSource = "/home/odoo/instance/odoo/odoo/tools/config.py"
+
+// sentrySectionMarker is a string that only the config loader of the Odoo versions shipping the
+// new sentry contract contains.
+const sentrySectionMarker = "unknown option"
+
+// sentrySectionComment tells a reader of the rendered configuration why the keys live here.
+const sentrySectionComment = `; The sentry module reads its options from this section since 19.0.
+; Odoo ignores the section, and keeping the keys out of [options] keeps it from
+; warning about an unknown option on every start.`
+
+// SentryReadsOwnSection reports whether the sentry module takes its keys from a [sentry] section
+// instead of from [options].
+//
+// OCA changed that contract for 19.0 in commit ce4a395be6b85d5823fb3bfe9e377c5aa28da1d4: post_load
+// stopped passing the live Odoo configuration and now passes a dict parsed from a [sentry] section
+// of the configuration file, so the keys written to [options] are read by nobody.
+//
+// The marker is looked for in odoo/odoo rather than in the module itself on purpose. OCA moves
+// modules between repositories without announcing it, so the path of the sentry module is not
+// something to depend on, while the path of Odoo is fixed by the image layout.
+func SentryReadsOwnSection(odooConfigPath string) bool {
+	content, err := os.ReadFile(odooConfigPath) // #nosec G304
+	if err != nil {
+		log.Warningf("Cannot read %s, Sentry keys go to [options] only: %s", odooConfigPath, err)
+		return false
+	}
+	return strings.Contains(string(content), sentrySectionMarker)
+}
+
 // UpdateSentry check if sentry is enabled in such case adds/updates the values in the ini condiguration file
 // setting the environment and the main repository path
 func UpdateSentry(config *ini.File, instanceType string) {
@@ -218,6 +249,31 @@ func UpdateSentry(config *ini.File, instanceType string) {
 			if imageTag := GetImageTag(GetMainRepoPath()); imageTag != "" {
 				config.Section("options").Key("sentry_dist").SetValue(imageTag)
 			}
+		}
+		if SentryReadsOwnSection(odooConfigSource) {
+			MoveSentryKeysToOwnSection(config)
+		}
+	}
+}
+
+// MoveSentryKeysToOwnSection moves every sentry_ key out of [options] and into a [sentry] section,
+// which is where the module reads them since 19.0.
+//
+// They are moved rather than copied because [options] is where Odoo looks for its own options, and
+// a key it does not know earns a warning on every start:
+//
+//	unknown option 'sentry_dsn' in the config file at /home/odoo/.odoorc, option stored as-is,
+//	without parsing
+//
+// server_wide_modules is an Odoo option and stays where it is; only the sentry_ prefix moves.
+func MoveSentryKeysToOwnSection(config *ini.File) {
+	options := config.Section("options")
+	sentry := config.Section("sentry")
+	sentry.Comment = sentrySectionComment
+	for _, key := range options.Keys() {
+		if strings.HasPrefix(key.Name(), "sentry_") {
+			sentry.Key(key.Name()).SetValue(key.Value())
+			options.DeleteKey(key.Name())
 		}
 	}
 }

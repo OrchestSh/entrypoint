@@ -3,9 +3,11 @@ package utils
 import (
 	"os"
 	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/ini.v1"
 )
 
 func TestFilterStrings(t *testing.T) {
@@ -83,6 +85,50 @@ func TestGetSentryEnvironment(t *testing.T) {
 		assert.Equal(t, v.expected, GetSentryEnvironment(v.instanceType),
 			"The environment must join the stage and the version.")
 	}
+}
+
+func TestSentryReadsOwnSection(t *testing.T) {
+	loader := filepath.Join(t.TempDir(), "config.py")
+	if err := os.WriteFile(loader, []byte("self._log(logging.WARNING, \"unknown option %r\")\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	assert.True(t, SentryReadsOwnSection(loader),
+		"The marker in the config loader means the module reads its own section.")
+
+	older := filepath.Join(t.TempDir(), "config.py")
+	if err := os.WriteFile(older, []byte("def _load_file_options(self, rcfile):\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	assert.False(t, SentryReadsOwnSection(older),
+		"Without the marker the keys belong in [options] alone.")
+	assert.False(t, SentryReadsOwnSection(filepath.Join(t.TempDir(), "missing.py")),
+		"An unreadable loader must not add the section.")
+}
+
+func TestMoveSentryKeysToOwnSection(t *testing.T) {
+	config := ini.Empty()
+	options := config.Section("options")
+	options.Key("sentry_enabled").SetValue("True")
+	options.Key("sentry_odoo_dir").SetValue("/home/odoo/instance/extra_addons/customer")
+	options.Key("server_wide_modules").SetValue("web,queue_job,sentry")
+	options.Key("db_host").SetValue("localhost")
+
+	MoveSentryKeysToOwnSection(config)
+
+	sentry := config.Section("sentry")
+	assert.Equal(t, "True", sentry.Key("sentry_enabled").Value(),
+		"Every sentry_ key must reach the section the module reads.")
+	assert.Equal(t, "/home/odoo/instance/extra_addons/customer", sentry.Key("sentry_odoo_dir").Value(),
+		"Every sentry_ key must reach the section the module reads.")
+	assert.False(t, options.HasKey("sentry_enabled"),
+		"A key Odoo does not know must not stay in [options], it warns on every start.")
+	assert.False(t, options.HasKey("sentry_odoo_dir"),
+		"A key Odoo does not know must not stay in [options], it warns on every start.")
+	assert.Equal(t, "web,queue_job,sentry", options.Key("server_wide_modules").Value(),
+		"server_wide_modules is an Odoo option and stays in [options].")
+	assert.Equal(t, "localhost", options.Key("db_host").Value(),
+		"Only the sentry_ prefix moves.")
+	assert.False(t, sentry.HasKey("db_host"), "Only the sentry_ prefix moves.")
 }
 
 func TestSplitEnvVars(t *testing.T) {
