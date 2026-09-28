@@ -57,9 +57,19 @@ func TestGetImageTag(t *testing.T) {
 		"commit", "--allow-empty", "-m", "empty").Run(); err != nil {
 		t.Fatal(err)
 	}
-	commit := RunGit(repoPath, "rev-parse", "--short", "HEAD")
+	commit := RunGit(repoPath, "rev-parse", "--short=8", "HEAD")
+	assert.Len(t, commit, 8, "The builder tags with eight characters of the commit.")
 	assert.Equal(t, "customer-19.0-"+commit, GetImageTag(repoPath),
 		"The tag must be built from MAIN_APP, VERSION and the commit.")
+	if err := exec.Command("git", "-C", repoPath, "checkout", "-q", "-b", "19.0-dev1").Run(); err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, "customer-19.0-dev"+commit, GetImageTag(repoPath),
+		"A branch that is not the version is a dev build.")
+	t.Setenv("ORCHESTSH_IMAGE_TAG", "customer-19.0-devabcdef12")
+	assert.Equal(t, "customer-19.0-devabcdef12", GetImageTag(repoPath),
+		"The tag the builder baked into the image wins over the checkout.")
+	t.Setenv("ORCHESTSH_IMAGE_TAG", "")
 	assert.Equal(t, "", GetImageTag(t.TempDir()),
 		"Without a repository there is no tag to report.")
 	t.Setenv("MAIN_APP", "")

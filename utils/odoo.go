@@ -164,20 +164,29 @@ func GetMainRepoBranch(repoPath string) string {
 // GetImageTag returns the tag of the image that is running, so an event names what to pull in
 // order to reproduce it, together with DOCKER_IMAGE_REPO:
 //
-//	docker run quay.io/vauxoo/customer:customer-19.0-51859fb
+//	docker run quay.io/vauxoo/customer:customer-19.0-dev51859fbc
 //
-// The version is what belongs here rather than the branch, because that is what the tag carries.
+// The builder bakes the tag it pushed into ORCHESTSH_IMAGE_TAG, and that is the answer whenever
+// it is there: it is the only source that knows about the "dev" prefix of a merge request build.
 // It goes to sentry_dist and not to sentry_release: the tag is fixed for the life of the
 // container, while the release has to keep up with a developer committing inside it, which is
 // what reading it from sentry_odoo_dir on every start of Odoo gives.
 //
-// Empty when any of the three parts is missing.
+// An image built before the builder did that falls back to rebuilding the tag from the checkout
+// the way the builder does outside a merge request: eight characters of the commit, prefixed with
+// "dev" when the branch is not the version. Empty when any of the parts is missing.
 func GetImageTag(repoPath string) string {
+	if imageTag := os.Getenv("ORCHESTSH_IMAGE_TAG"); imageTag != "" {
+		return imageTag
+	}
 	mainApp := os.Getenv("MAIN_APP")
 	version := os.Getenv("VERSION")
-	commit := RunGit(repoPath, "rev-parse", "--short", "HEAD")
+	commit := RunGit(repoPath, "rev-parse", "--short=8", "HEAD")
 	if mainApp == "" || version == "" || commit == "" {
 		return ""
+	}
+	if GetMainRepoBranch(repoPath) != version {
+		commit = "dev" + commit
 	}
 	return mainApp + "-" + version + "-" + commit
 }
