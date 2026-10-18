@@ -17,7 +17,7 @@ func RunCou(configFile, db_name string, stream bool) error {
 	if !stream {
 		cmd += " --logfile /tmp/deployvlogs/cou_update.log"
 	}
-	pythonPath := "/home/odoo/instance/odoo:" + os.Getenv("PYTHONPATH")
+	pythonPath := "PYTHONPATH=/home/odoo/instance/odoo:" + os.Getenv("PYTHONPATH")
 	log.Debugf("Running command: %s", cmd)
 	err := utils.RunAndLogCmdAs(cmd, "odoo", []string{pythonPath})
 	return err
